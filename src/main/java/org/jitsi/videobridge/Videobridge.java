@@ -783,7 +783,7 @@ public class Videobridge
             {
                 String channelID = channelIQ.getID();
                 int channelExpire = channelIQ.getExpire();
-                String channelBundleId = channelIQ.getChannelBundleId();
+                String channelBundleId = channelIQ.getEndpoint();
                 RtpChannel channel;
                 boolean channelCreated = false;
                 String transportNamespace
@@ -965,7 +965,7 @@ public class Videobridge
                 String endpointID = sctpConnIq.getEndpoint();
                 SctpConnection sctpConn;
                 int expire = sctpConnIq.getExpire();
-                String channelBundleId = sctpConnIq.getChannelBundleId();
+                String channelBundleId = sctpConnIq.getEndpoint();
 
                 // No ID means SCTP connection is to either be created
                 // or focus uses endpoint identity.
@@ -1099,9 +1099,16 @@ public class Videobridge
                 responseContentIQ.addSctpConnection(responseSctpIq);
             }
         }
+
+        // If we detect that the iq we received contains deprecated
+        // ColibriConferenceIQ.ChannelBundle we are dealing with old client
+        // and we need to replay with the old format
+        boolean legacyMode = false;
         for (ColibriConferenceIQ.ChannelBundle channelBundleIq
                 : conferenceIQ.getChannelBundles())
         {
+            legacyMode = true;
+
             TransportManager transportManager
                 = conference.getTransportManager(channelBundleIq.getId());
             IceUdpTransportPacketExtension transportIq
@@ -1119,9 +1126,41 @@ public class Videobridge
                 : conferenceIQ.getEndpoints())
         {
             conference.updateEndpoint(colibriEndpoint);
+
+            if (!legacyMode)
+            {
+                TransportManager transportManager
+                    = conference.getTransportManager(colibriEndpoint.getId());
+                IceUdpTransportPacketExtension transportIq
+                    = colibriEndpoint.getTransport();
+
+                if (transportManager != null && transportIq != null)
+                {
+                    transportManager
+                        .startConnectivityEstablishment(transportIq);
+                }
+            }
         }
 
-        conference.describeChannelBundles(responseConferenceIQ);
+        if (legacyMode)
+        {
+            // fix channels to have channel-bundle-id
+            for(ColibriConferenceIQ.Content c
+                    : responseConferenceIQ.getContents())
+            {
+                for (ColibriConferenceIQ.Channel cn : c.getChannels())
+                {
+                    cn.setChannelBundleId(cn.getEndpoint());
+                }
+            }
+
+            // adds the deprecated nodes to be compatible with old format
+            conference.describeChannelBundles(responseConferenceIQ);
+        }
+        else
+        {
+            conference.describeEndpoints(responseConferenceIQ);
+        }
 
         responseConferenceIQ.setType(
                 org.jivesoftware.smack.packet.IQ.Type.RESULT);

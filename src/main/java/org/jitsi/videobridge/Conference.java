@@ -483,6 +483,7 @@ public class Conference
      * Adds the channel-bundles of this <tt>Conference</tt> as
      * <tt>ColibriConferenceIQ.ChannelBundle</tt> instances in <tt>iq</tt>.
      * @param iq the <tt>ColibriConferenceIQ</tt> in which to describe.
+     * @deprecated
      */
     void describeChannelBundles(ColibriConferenceIQ iq)
     {
@@ -496,6 +497,28 @@ public class Conference
 
                 entry.getValue().describe(responseBundleIQ);
                 iq.addChannelBundle(responseBundleIQ);
+            }
+        }
+    }
+
+    /**
+     * Adds the endpoint of this <tt>Conference</tt> as
+     * <tt>ColibriConferenceIQ.Endpoint</tt> instances in <tt>iq</tt>.
+     * @param iq the <tt>ColibriConferenceIQ</tt> in which to describe.
+     */
+    void describeEndpoints(ColibriConferenceIQ iq)
+    {
+        synchronized (transportManagers)
+        {
+            for (Map.Entry<String, IceUdpTransportManager> entry
+                : transportManagers.entrySet())
+            {
+                ColibriConferenceIQ.Endpoint responseBundleIQ
+                    = new ColibriConferenceIQ.Endpoint(
+                        entry.getKey(), null, null);
+
+                entry.getValue().describe(responseBundleIQ);
+                iq.addEndpoint(responseBundleIQ);
             }
         }
     }

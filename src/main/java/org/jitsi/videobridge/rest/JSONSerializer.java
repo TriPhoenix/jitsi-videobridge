@@ -45,9 +45,17 @@ final class JSONSerializer
     /**
      * The name of the JSON pair which specifies the value of the
      * <tt>channelBundles</tt> property of <tt>ColibriConferenceIQ</tt>.
+     * @deprecated
      */
     static final String CHANNEL_BUNDLES
         = ColibriConferenceIQ.ChannelBundle.ELEMENT_NAME + "s";
+
+    /**
+     * The name of the JSON pair which specifies the value of the
+     * <tt>endpoints</tt> property of <tt>ColibriConferenceIQ</tt>.
+     */
+    static final String ENDPOINTS
+        = ColibriConferenceIQ.Endpoint.ELEMENT_NAME + "s";
 
     /**
      * The name of the JSON pair which specifies the value of the
@@ -315,6 +323,39 @@ final class JSONSerializer
         return jsonObject;
     }
 
+    public static JSONObject serializeEndpoint(
+            ColibriConferenceIQ.Endpoint endpoint)
+    {
+        JSONObject jsonObject;
+
+        if (endpoint == null)
+        {
+            jsonObject = null;
+        }
+        else
+        {
+            String id = endpoint.getId();
+            IceUdpTransportPacketExtension transport = endpoint.getTransport();
+
+            jsonObject = new JSONObject();
+            // id
+            if (id != null)
+            {
+                jsonObject.put(
+                        ColibriConferenceIQ.ChannelBundle.ID_ATTR_NAME,
+                        id);
+            }
+            // transport
+            if (transport != null)
+            {
+                jsonObject.put(
+                        transport.getElementName(),
+                        serializeTransport(transport));
+            }
+        }
+        return jsonObject;
+    }
+
     public static JSONArray serializeChannelBundles(
             Collection<ColibriConferenceIQ.ChannelBundle> channelBundles)
     {
@@ -336,6 +377,27 @@ final class JSONSerializer
         return jsonArray;
     }
 
+    public static JSONArray serializeEndpoints(
+            Collection<ColibriConferenceIQ.Endpoint> endpoints)
+    {
+        JSONArray jsonArray;
+
+        if (endpoints == null)
+        {
+            jsonArray = null;
+        }
+        else
+        {
+            jsonArray = new JSONArray();
+            for (ColibriConferenceIQ.Endpoint endpoint
+                    : endpoints)
+            {
+                jsonArray.add(serializeEndpoint(endpoint));
+            }
+        }
+        return jsonArray;
+    }
+
     public static JSONObject serializeChannelCommon(
             ColibriConferenceIQ.ChannelCommon channelCommon)
     {
@@ -348,7 +410,7 @@ final class JSONSerializer
         else
         {
             String id = channelCommon.getID();
-            String channelBundleId = channelCommon.getChannelBundleId();
+            String channelBundleId = channelCommon.getEndpoint();
             String endpoint = channelCommon.getEndpoint();
             int expire = channelCommon.getExpire();
             Boolean initiator = channelCommon.isInitiator();
@@ -436,6 +498,8 @@ final class JSONSerializer
                 = conference.getContents();
             List<ColibriConferenceIQ.ChannelBundle> channelBundles
                 = conference.getChannelBundles();
+            List<ColibriConferenceIQ.Endpoint> endpoints
+                = conference.getEndpoints();
             ColibriConferenceIQ.Recording recording = conference.getRecording();
             boolean isGracefulShutdown = conference.isGracefulShutdown();
 
@@ -452,6 +516,13 @@ final class JSONSerializer
                 jsonObject.put(
                         CHANNEL_BUNDLES,
                         serializeChannelBundles(channelBundles));
+            }
+            // endpoints
+            if ((endpoints != null) && !endpoints.isEmpty())
+            {
+                jsonObject.put(
+                        ENDPOINTS,
+                        serializeEndpoints(endpoints));
             }
             // recording
             if (recording != null)

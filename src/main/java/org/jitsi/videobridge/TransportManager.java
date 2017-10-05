@@ -192,10 +192,40 @@ public abstract class TransportManager
      * specified <tt>iq</tt> may be thought of as containing a description of
      * this instance.
      *
-     * @param iq the <tt>ColibriConferenceIQ.Channel</tt> on which to set the
-     * values of the properties of this instance
+     * @param iq the <tt>ColibriConferenceIQ.ChannelBundle</tt> on which to set
+     * the values of the properties of this instance
      */
     public void describe(ColibriConferenceIQ.ChannelBundle iq)
+    {
+        IceUdpTransportPacketExtension pe = iq.getTransport();
+        String namespace = getXmlNamespace();
+
+        if ((pe == null) || !namespace.equals(pe.getNamespace()))
+        {
+            if (IceUdpTransportPacketExtension.NAMESPACE.equals(namespace))
+                pe = new IceUdpTransportPacketExtension();
+            else if (RawUdpTransportPacketExtension.NAMESPACE.equals(namespace))
+                pe = new RawUdpTransportPacketExtension();
+            else
+                pe = null;
+
+            iq.setTransport(pe);
+        }
+        if (pe != null)
+            describe(pe);
+    }
+
+    /**
+     * Sets the values of the properties of a specific
+     * <tt>ColibriConferenceIQ.Endpoint</tt>
+     * to the values of the respective properties of this instance. Thus, the
+     * specified <tt>iq</tt> may be thought of as containing a description of
+     * this instance.
+     *
+     * @param iq the <tt>ColibriConferenceIQ.Endpoint</tt> on which to set the
+     * values of the properties of this instance
+     */
+    public void describe(ColibriConferenceIQ.Endpoint iq)
     {
         IceUdpTransportPacketExtension pe = iq.getTransport();
         String namespace = getXmlNamespace();

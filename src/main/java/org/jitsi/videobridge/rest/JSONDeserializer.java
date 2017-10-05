@@ -243,6 +243,43 @@ final class JSONDeserializer
         return channelBundleIQ;
     }
 
+    public static ColibriConferenceIQ.Endpoint deserializeEndpoint(
+            JSONObject endpoint,
+            ColibriConferenceIQ conferenceIQ)
+    {
+        ColibriConferenceIQ.Endpoint endpointIQ;
+
+        if (endpoint == null)
+        {
+            endpointIQ = null;
+        }
+        else
+        {
+            Object id
+                = endpoint.get(ColibriConferenceIQ.Endpoint.ID_ATTR_NAME);
+            Object transport
+                = endpoint.get(IceUdpTransportPacketExtension.ELEMENT_NAME);
+            Object statsId
+                = endpoint.get(ColibriConferenceIQ.Endpoint.STATS_ID_ATTR_NAME);
+            Object displayName
+                = endpoint.get(
+                    ColibriConferenceIQ.Endpoint.DISPLAYNAME_ATTR_NAME);
+
+
+            endpointIQ
+                = new ColibriConferenceIQ.Endpoint(
+                        (id == null) ? null : id.toString(),
+                        (statsId == null) ? null : statsId.toString(),
+                        (displayName == null) ? null : displayName.toString());
+            // transport
+            if (transport != null)
+                deserializeTransport((JSONObject) transport, endpointIQ);
+
+            conferenceIQ.addEndpoint(endpointIQ);
+        }
+        return endpointIQ;
+    }
+
     public static void deserializeChannelBundles(
             JSONArray channelBundles,
             ColibriConferenceIQ conferenceIQ)
@@ -253,6 +290,21 @@ final class JSONDeserializer
             {
                 deserializeChannelBundle(
                         (JSONObject) channelBundle,
+                        conferenceIQ);
+            }
+        }
+    }
+
+    public static void deserializeEndpoints(
+            JSONArray endpoints,
+            ColibriConferenceIQ conferenceIQ)
+    {
+        if ((endpoints != null) && !endpoints.isEmpty())
+        {
+            for (Object endpoint : endpoints)
+            {
+                deserializeEndpoint(
+                        (JSONObject) endpoint,
                         conferenceIQ);
             }
         }
@@ -340,6 +392,8 @@ final class JSONDeserializer
             Object contents = conference.get(JSONSerializer.CONTENTS);
             Object channelBundles
                 = conference.get(JSONSerializer.CHANNEL_BUNDLES);
+            Object endpoints
+                = conference.get(JSONSerializer.ENDPOINTS);
             Object recording
                 = conference.get(ColibriConferenceIQ.Recording.ELEMENT_NAME);
             Object strategy
@@ -361,6 +415,13 @@ final class JSONDeserializer
             {
                 deserializeChannelBundles(
                         (JSONArray) channelBundles,
+                        conferenceIQ);
+            }
+            // endpoints
+            if (endpoints != null)
+            {
+                deserializeEndpoints(
+                        (JSONArray) endpoints,
                         conferenceIQ);
             }
             // recording
@@ -958,6 +1019,18 @@ final class JSONDeserializer
 
         if (transportIQ != null)
             channelBundleIQ.setTransport(transportIQ);
+        return transportIQ;
+    }
+
+    public static IceUdpTransportPacketExtension deserializeTransport(
+            JSONObject transport,
+            ColibriConferenceIQ.Endpoint endpointIQ)
+    {
+        IceUdpTransportPacketExtension transportIQ
+            = deserializeTransport(transport);
+
+        if (transportIQ != null)
+            endpointIQ.setTransport(transportIQ);
         return transportIQ;
     }
 
