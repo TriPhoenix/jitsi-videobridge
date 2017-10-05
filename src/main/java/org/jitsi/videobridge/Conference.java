@@ -1914,6 +1914,8 @@ public class Conference
                                         endpoint));
                     }
                 }
+
+                endpoint.setStatsId(colibriEndpoint.getStatsId());
             }
         }
     }
